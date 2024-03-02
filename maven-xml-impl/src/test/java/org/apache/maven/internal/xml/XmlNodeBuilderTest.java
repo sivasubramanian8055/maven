@@ -28,6 +28,7 @@ import org.apache.maven.api.xml.XmlNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class XmlNodeBuilderTest {
 
@@ -54,5 +55,38 @@ class XmlNodeBuilderTest {
         assertEquals("doc", node.getName());
         assertEquals(1, node.getAttributes().size());
         assertEquals("foo:bar", node.getAttribute("xmlns"));
+    }
+
+    @Test
+    void testElementWithMultipleAttributes() throws Exception {
+        String doc = "<?xml version='1.0'?><doc attr1='value1' attr2='value2'></doc>";
+        StringReader r = new StringReader(doc);
+        XmlNode node = XmlNodeBuilder.build(r);
+        assertEquals("doc", node.getName());
+        assertEquals("value1", node.getAttribute("attr1"));
+        assertEquals("value2", node.getAttribute("attr2"));
+    }
+
+    @Test
+    void testNestedElements() throws Exception {
+        String doc = "<?xml version='1.0'?><root><parent><child>value</child></parent></root>";
+        StringReader r = new StringReader(doc);
+        XmlNode node = XmlNodeBuilder.build(r);
+        assertEquals("root", node.getName());
+        XmlNode parent = node.getChildren().get(0);
+        assertEquals("parent", parent.getName());
+        XmlNode child = parent.getChildren().get(0);
+        assertEquals("child", child.getName());
+        assertEquals("value", child.getValue());
+    }
+
+    @Test
+    void testXmlCommentsHandling() throws Exception {
+        String doc = "<?xml version='1.0'?><doc><!-- This is a comment --><child>text</child></doc>";
+        StringReader r = new StringReader(doc);
+        XmlNode node = XmlNodeBuilder.build(r);
+        assertEquals("doc", node.getName());
+        assertEquals(1, node.getChildren().size());
+        assertEquals("child", node.getChildren().get(0).getName());
     }
 }
